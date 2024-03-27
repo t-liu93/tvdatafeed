@@ -378,6 +378,22 @@ class TvDatafeedLive(tvDatafeed.TvDatafeed):
 
         return True
 
+    @staticmethod
+    def get_retry_time_for_interval(interval: str) -> int:
+        '''
+        Determine the proper retry time for each interval.
+        This is due to the reason that TV sometimes will not give data on time.
+        Especially when the interval is really short.
+        '''
+        if interval == '1':
+            return 10
+        elif interval == '3':
+            return 15
+        elif interval == '5':
+            return 30
+        else:
+            return 60
+
     def _main_loop(self):
         # Main thread to return ticker data
         #
@@ -408,7 +424,7 @@ class TvDatafeedLive(tvDatafeed.TvDatafeed):
                                     data=data.drop(labels=data.index[1]) # drop the row (last) which has yet un-closed bar data
                                     break
 
-                            time.sleep(0.1) # little time before retrying
+                            time.sleep(self.get_retry_time_for_interval(interval)) # retry sleep
                         else: # limit reached, print an error into logs and gracefully shut down the main loop and consumer threads
                             self._sat.quit()
                             logger.critical("Failed to retrieve new data from TradingView")
